@@ -93,8 +93,8 @@ const __dirname = path.dirname(__filename);
     }
   };
 
-  // Scan all files and folders under src
-  await scanDirectory(path.resolve(__dirname, 'src'));
+  // Scan all files and folders under the project root src directory
+  await scanDirectory(path.resolve(__dirname, '../src'));
 
   await browser.close();
 
