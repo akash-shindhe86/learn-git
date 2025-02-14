@@ -88,12 +88,12 @@ const __dirname = path.dirname(__filename);
             await page.setContent(html);
             await scanPage(page, file);
             await page.close();
-          } catch (err) {
-            console.error(`Error importing module from ${tempFilePath}:`, err);
-          } finally {
+
             // Clean up the temporary files
             fs.unlinkSync(tempFilePath);
             fs.unlinkSync(bundledFilePath);
+          } catch (err) {
+            console.error(`Error importing module from ${tempFilePath}:`, err);
           }
         } else {
           console.error(`Error transforming ${filePath}`);
