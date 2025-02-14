@@ -2,11 +2,12 @@ import { AxePuppeteer } from '@axe-core/puppeteer';
 import puppeteer, { Page } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath, URL } from 'url';
+import { fileURLToPath } from 'url';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import stylelint from 'stylelint';
 import babel from '@babel/core';
+import os from 'os';
 
 // Polyfill for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -58,23 +59,18 @@ const __dirname = path.dirname(__filename);
             ${transformed.code}
             export default Component;
           `;
-          let moduleUrl;
-          try {
-            moduleUrl = new URL(`data:text/javascript;base64,${Buffer.from(script).toString('base64')}`);
-          } catch (err) {
-            if (err instanceof Error) {
-              console.error("Invalid URL:", err.message);
-            } else {
-              console.error("An unexpected error occurred:", err);
-            }
-            return;
-          }
-          const { default: Component } = await import(moduleUrl.href);
+          const tempFilePath = path.join(os.tmpdir(), `${path.basename(filePath)}.mjs`);
+          fs.writeFileSync(tempFilePath, script);
+
+          const { default: Component } = await import(tempFilePath);
           const html = ReactDOMServer.renderToString(React.createElement(Component));
           const page = await browser.newPage();
           await page.setContent(html);
           await scanPage(page, file);
           await page.close();
+
+          // Clean up the temporary file
+          fs.unlinkSync(tempFilePath);
         } else {
           console.error(`Error transforming ${filePath}`);
         }
