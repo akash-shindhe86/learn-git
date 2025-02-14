@@ -2,12 +2,13 @@ import { AxePuppeteer } from '@axe-core/puppeteer';
 import puppeteer, { Page } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import stylelint from 'stylelint';
 import babel from '@babel/core';
 import os from 'os';
+import { buildSync } from 'esbuild';
 
 // Polyfill for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -69,8 +70,19 @@ const __dirname = path.dirname(__filename);
           fs.writeFileSync(tempFilePath, script);
 
           try {
-            console.log(`Importing module from: ${tempFilePath}`);
-            const { default: Component } = require(tempFilePath);
+            console.log(`Bundling module from: ${tempFilePath}`);
+            const bundledFilePath = path.join(os.tmpdir(), `${path.basename(filePath)}.bundle.mjs`);
+            buildSync({
+              entryPoints: [tempFilePath],
+              bundle: true,
+              outfile: bundledFilePath,
+              format: 'esm',
+              platform: 'node',
+              external: ['react', 'react-dom']
+            });
+
+            console.log(`Importing bundled module from: ${bundledFilePath}`);
+            const { default: Component } = await import(pathToFileURL(bundledFilePath).href);
             const html = ReactDOMServer.renderToString(React.createElement(Component));
             const page = await browser.newPage();
             await page.setContent(html);
@@ -79,8 +91,9 @@ const __dirname = path.dirname(__filename);
           } catch (err) {
             console.error(`Error importing module from ${tempFilePath}:`, err);
           } finally {
-            // Clean up the temporary file
+            // Clean up the temporary files
             fs.unlinkSync(tempFilePath);
+            fs.unlinkSync(bundledFilePath);
           }
         } else {
           console.error(`Error transforming ${filePath}`);
