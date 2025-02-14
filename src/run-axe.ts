@@ -14,6 +14,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 (async () => {
+  console.log("Starting script...");
+
   const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
@@ -22,6 +24,7 @@ const __dirname = path.dirname(__filename);
 
   // Function to scan a page with axe-core
   const scanPage = async (page: Page, file: string) => {
+    console.log(`Scanning page: ${file}`);
     const results = await new AxePuppeteer(page).analyze();
     console.log(`Results for ${file}:`, results.violations);
 
@@ -32,6 +35,7 @@ const __dirname = path.dirname(__filename);
 
   // Function to scan directories recursively
   const scanDirectory = async (dir: string) => {
+    console.log(`Scanning directory: ${dir}`);
     const files = fs.readdirSync(dir);
 
     for (const file of files) {
@@ -41,11 +45,13 @@ const __dirname = path.dirname(__filename);
       if (stat.isDirectory()) {
         await scanDirectory(filePath);
       } else if (file.endsWith('.html')) {
+        console.log(`Processing HTML file: ${filePath}`);
         const page = await browser.newPage();
         await page.goto(`file://${filePath}`);
         await scanPage(page, file);
         await page.close();
       } else if (file.endsWith('.tsx') || file.endsWith('.jsx') || file.endsWith('.js')) {
+        console.log(`Processing JS/TSX/JSX file: ${filePath}`);
         const code = fs.readFileSync(filePath, 'utf8');
         const transformed = babel.transformSync(code, {
           filename: filePath,
@@ -62,19 +68,25 @@ const __dirname = path.dirname(__filename);
           const tempFilePath = path.join(os.tmpdir(), `${path.basename(filePath)}.mjs`);
           fs.writeFileSync(tempFilePath, script);
 
-          const { default: Component } = await import(pathToFileURL(tempFilePath).href);
-          const html = ReactDOMServer.renderToString(React.createElement(Component));
-          const page = await browser.newPage();
-          await page.setContent(html);
-          await scanPage(page, file);
-          await page.close();
-
-          // Clean up the temporary file
-          fs.unlinkSync(tempFilePath);
+          try {
+            console.log(`Importing module from: ${tempFilePath}`);
+            const { default: Component } = await import(pathToFileURL(tempFilePath).href);
+            const html = ReactDOMServer.renderToString(React.createElement(Component));
+            const page = await browser.newPage();
+            await page.setContent(html);
+            await scanPage(page, file);
+            await page.close();
+          } catch (err) {
+            console.error(`Error importing module from ${tempFilePath}:`, err);
+          } finally {
+            // Clean up the temporary file
+            fs.unlinkSync(tempFilePath);
+          }
         } else {
           console.error(`Error transforming ${filePath}`);
         }
       } else if (file.endsWith('.css') || file.endsWith('.scss')) {
+        console.log(`Processing CSS/SCSS file: ${filePath}`);
         const cssContent = fs.readFileSync(filePath, 'utf8');
         const lintResults = await stylelint.lint({
           code: cssContent,
@@ -95,6 +107,9 @@ const __dirname = path.dirname(__filename);
   await browser.close();
 
   if (hasViolations) {
+    console.log("Accessibility violations found.");
     process.exit(1); // Exit with error if there are violations
+  } else {
+    console.log("No accessibility violations found.");
   }
 })();
