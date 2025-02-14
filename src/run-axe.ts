@@ -2,7 +2,7 @@ import { AxePuppeteer } from '@axe-core/puppeteer';
 import puppeteer, { Page } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import stylelint from 'stylelint';
@@ -62,7 +62,7 @@ const __dirname = path.dirname(__filename);
           const tempFilePath = path.join(os.tmpdir(), `${path.basename(filePath)}.mjs`);
           fs.writeFileSync(tempFilePath, script);
 
-          const { default: Component } = await import(tempFilePath);
+          const { default: Component } = await import(pathToFileURL(tempFilePath).href);
           const html = ReactDOMServer.renderToString(React.createElement(Component));
           const page = await browser.newPage();
           await page.setContent(html);
