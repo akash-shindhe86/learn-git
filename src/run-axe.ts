@@ -2,7 +2,7 @@ import { AxePuppeteer } from '@axe-core/puppeteer';
 import puppeteer, { Page } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import stylelint from 'stylelint';
@@ -70,7 +70,7 @@ const __dirname = path.dirname(__filename);
 
           try {
             console.log(`Importing module from: ${tempFilePath}`);
-            const { default: Component } = await import(pathToFileURL(tempFilePath).href);
+            const { default: Component } = require(tempFilePath);
             const html = ReactDOMServer.renderToString(React.createElement(Component));
             const page = await browser.newPage();
             await page.setContent(html);
