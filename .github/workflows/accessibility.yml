@@ -18,6 +18,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install React dependencies
+        run: npm install react react-dom @types/react @types/react-dom
+
+      - name: Enable debug logging
+        run: echo "NODE_OPTIONS=--trace-warnings" >> $GITHUB_ENV
+
       - name: Run axe-core lint
         run: npx ts-node --esm src/run-axe.ts
 
