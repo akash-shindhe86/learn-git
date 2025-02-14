@@ -6,7 +6,7 @@
   "scripts": {
     "start": "webpack serve --mode development",
     "build": "webpack --mode production",
-    "scan-ada": "ts-node src/run-axe.ts"
+    "scan-ada": "ts-node --esm src/run-axe.ts"
   },
   "dependencies": {
     "react": "^18.0.0",

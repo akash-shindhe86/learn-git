@@ -31,4 +31,4 @@ jobs:
           sleep 5
 
       - name: Run accessibility scan
-        run: npm run scan-ada
+        run: npx ts-node --esm src/run-axe.ts
