@@ -44,7 +44,7 @@ const __dirname = path.dirname(__filename);
         await page.goto(`file://${filePath}`);
         await scanPage(page, file);
         await page.close();
-      } else if (file.endsWith('.tsx') || file.endsWith('.jsx')) {
+      } else if (file.endsWith('.tsx') || file.endsWith('.jsx') || file.endsWith('.js')) {
         const code = fs.readFileSync(filePath, 'utf8');
         const transformed = babel.transformSync(code, {
           filename: filePath,
